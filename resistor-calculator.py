@@ -89,6 +89,7 @@ def draw(n, m, subset_n, subset_m):
             voltageRow.append(voltage)
         voltageRows.append(voltageRow)
 
+    minGap = float('inf')
     voltages.sort()
     rows = []
     for j in range(n+1):
@@ -102,6 +103,8 @@ def draw(n, m, subset_n, subset_m):
             idx = find_index(voltages, voltage)
             if idx > 0:
                 gap = voltages[idx] - voltages[idx - 1]
+                if gap < minGap:
+                    minGap = gap
 
             info = f"VLT: {round(voltage,3)}\nADC: {round(to_adc_value(voltage), 1)}\nGAP: {'-' if gap == -1 else round(to_adc_value(gap), 1)}"
             row.append(info) # ({res_sum}, {'[]' if j == 0 else rev_n[0:j]}, {'[]' if i == 0 else rev_m[0:i]})
@@ -114,6 +117,7 @@ def draw(n, m, subset_n, subset_m):
     table.set_style(SINGLE_BORDER)
     table.add_rows(rows)
     print(table)
+    print(f"### Minimum ADC gap is {to_adc_value(minGap)}")
 
 def examine(n, m, subset_n, subset_m):
     # return maximum gap if we found mutual elements in the lists (excluding `a` resistor)
@@ -292,7 +296,6 @@ def calculate(n, m, resistor_type=ResistorType.E6, auto_stop=True, generations=1
         score = final_scores[i]
         print(f"### Final Best Individual: {score[1]}, Score: {score[0]}")
         print(f"### Final Best Individual: {score[1]}, Score: {score[0]}", file=original_stdout)
-        print(f"### Final ADC gap is {to_adc_value(score[0])}")
         print(f"### Final ADC gap is {to_adc_value(score[0])}", file=original_stdout)
         draw(n, m, score[1][0], score[1][1])
 
@@ -301,8 +304,14 @@ if __name__ == '__main__':
         sys.stdout = f
         start_time = time.time()
         
+        # calculate the optimal solution for a n x m resistor network
         calculate(4, 5, ResistorType.E12, auto_stop=True, 
                   generations=100000, elite_size=2, population_size=20, mutation_rate=0.3, crossover_rate=0.6)
+        
+        # calculate the gap and adc values for a given n x m resistor network
+        # n from top to bottom, m from right to left
+        # don't forget the -1 for the n
+        # draw(4 - 1, 5, [18000, 1800, 1800], [18000, 2700, 2700, 4700, 5600])
         
         end_time = time.time()
         elapsed_time = end_time - start_time
